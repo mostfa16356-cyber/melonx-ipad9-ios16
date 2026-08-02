@@ -1,3 +1,4 @@
+using Ryujinx.Common.Logging;
 using Ryujinx.Common;
 using Ryujinx.Common.Memory;
 using Ryujinx.Graphics.Device;
@@ -174,6 +175,9 @@ namespace Ryujinx.Graphics.Gpu.Engine.Dma
             if (type != LaunchDmaSemaphoreType.None)
             {
                 ulong address = ((ulong)_state.State.SetSemaphoreA << 32) | _state.State.SetSemaphoreB;
+
+                Logger.Info?.Print(LogClass.Gpu, $"SYNCDBG dma-sem-release type={type} va=0x{address:X} payload={_state.State.SetSemaphorePayload}");
+
                 if (type == LaunchDmaSemaphoreType.ReleaseOneWordSemaphore)
                 {
                     _channel.MemoryManager.Write(address, _state.State.SetSemaphorePayload);

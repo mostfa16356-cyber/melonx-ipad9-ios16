@@ -1,3 +1,4 @@
+using Ryujinx.Common.Logging;
 using Ryujinx.Graphics.GAL;
 
 namespace Ryujinx.Graphics.Gpu.Engine.Threed
@@ -130,6 +131,8 @@ namespace Ryujinx.Graphics.Gpu.Engine.Threed
         /// </summary>
         private void ReleaseSemaphore()
         {
+            Logger.Info?.Print(LogClass.Gpu, $"SYNCDBG sem-release va=0x{_state.State.SemaphoreAddress.Pack():X} payload={_state.State.SemaphorePayload}");
+
             _channel.MemoryManager.Write(_state.State.SemaphoreAddress.Pack(), _state.State.SemaphorePayload);
 
             _context.AdvanceSequence();
@@ -153,6 +156,8 @@ namespace Ryujinx.Graphics.Gpu.Engine.Threed
         {
             ulong gpuVa = _state.State.SemaphoreAddress.Pack();
 
+            Logger.Info?.Print(LogClass.Gpu, $"SYNCDBG report-request type={type} va=0x{gpuVa:X}");
+
             ulong ticks = _context.GetTimestamp();
 
             ICounterEvent counter = null;
@@ -167,6 +172,8 @@ namespace Ryujinx.Graphics.Gpu.Engine.Threed
 
                 if (counter?.Invalid != true)
                 {
+                    Logger.Info?.Print(LogClass.Gpu, $"SYNCDBG report-land type={type} va=0x{gpuVa:X} result={result}");
+
                     _channel.MemoryManager.Write(gpuVa, counterData);
                 }
             }
