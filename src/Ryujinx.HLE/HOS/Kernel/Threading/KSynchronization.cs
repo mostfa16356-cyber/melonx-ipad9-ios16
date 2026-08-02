@@ -33,7 +33,7 @@ namespace Ryujinx.HLE.HOS.Kernel.Threading
                 }
             }
 
-            long traceStart = trace ? System.Environment.TickCount64 : 0;
+            long traceStart = System.Environment.TickCount64;
 
             _context.CriticalSection.Enter();
 
@@ -133,9 +133,11 @@ namespace Ryujinx.HLE.HOS.Kernel.Threading
 
             _context.CriticalSection.Leave();
 
-            if (trace)
+            long elapsedMs = System.Environment.TickCount64 - traceStart;
+
+            if (trace || elapsedMs > 2000)
             {
-                Logger.Info?.Print(LogClass.Kernel, $"SYNCDBG svc-wait exit result={result} handle={handleIndex} elapsed={System.Environment.TickCount64 - traceStart}ms");
+                Logger.Info?.Print(LogClass.Kernel, $"SYNCDBG svc-wait exit result={result} handle={handleIndex} timeout={timeout} elapsed={elapsedMs}ms");
             }
 
             return result;

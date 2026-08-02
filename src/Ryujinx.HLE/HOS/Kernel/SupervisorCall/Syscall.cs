@@ -2601,6 +2601,11 @@ namespace Ryujinx.HLE.HOS.Kernel.SupervisorCall
             }
             else
             {
+                if (timeout > 2_000_000_000)
+                {
+                    Logger.Info?.Print(LogClass.Kernel, $"SYNCDBG slow-sleep requested timeout={timeout}ns");
+                }
+
                 KernelStatic.GetCurrentThread().Sleep(timeout + KTimeManager.DefaultTimeIncrementNanoseconds);
             }
         }

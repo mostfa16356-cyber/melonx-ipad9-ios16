@@ -1,3 +1,4 @@
+using Ryujinx.Common.Logging;
 using Ryujinx.HLE.HOS.Kernel.Common;
 using Ryujinx.HLE.HOS.Kernel.Process;
 using Ryujinx.Horizon.Common;
@@ -10,6 +11,20 @@ namespace Ryujinx.HLE.HOS.Kernel.Threading
     class KAddressArbiter
     {
         private const int HasListenersMask = 0x40000000;
+
+        private static Result TraceSlowWait(Result result, long start, string kind, long timeout)
+        {
+            long elapsed = System.Environment.TickCount64 - start;
+
+            if (elapsed > 2000)
+            {
+                Logger.Info?.Print(LogClass.Kernel, $"SYNCDBG slow-{kind} elapsed={elapsed}ms timeout={timeout} result={result}");
+            }
+
+            return result;
+        }
+
+
 
         private readonly KernelContext _context;
 
@@ -110,7 +125,14 @@ namespace Ryujinx.HLE.HOS.Kernel.Threading
             return result;
         }
 
-        public Result WaitProcessWideKeyAtomic(ulong mutexAddress, ulong condVarAddress, int threadHandle, long timeout)
+                public Result WaitProcessWideKeyAtomic(ulong mutexAddress, ulong condVarAddress, int threadHandle, long timeout)
+        {
+            long start = System.Environment.TickCount64;
+
+            return TraceSlowWait(WaitProcessWideKeyAtomicImpl(mutexAddress, condVarAddress, threadHandle, timeout), start, "condvar", timeout);
+        }
+
+        private Result WaitProcessWideKeyAtomicImpl(ulong mutexAddress, ulong condVarAddress, int threadHandle, long timeout)
         {
             _context.CriticalSection.Enter();
 
@@ -295,7 +317,14 @@ namespace Ryujinx.HLE.HOS.Kernel.Threading
             }
         }
 
-        public Result WaitForAddressIfEqual(ulong address, int value, long timeout)
+                public Result WaitForAddressIfEqual(ulong address, int value, long timeout)
+        {
+            long start = System.Environment.TickCount64;
+
+            return TraceSlowWait(WaitForAddressIfEqualImpl(address, value, timeout), start, "arb-eq", timeout);
+        }
+
+        private Result WaitForAddressIfEqualImpl(ulong address, int value, long timeout)
         {
             KThread currentThread = KernelStatic.GetCurrentThread();
 
@@ -380,7 +409,14 @@ namespace Ryujinx.HLE.HOS.Kernel.Threading
             return KernelResult.InvalidState;
         }
 
-        public Result WaitForAddressIfLessThan(ulong address, int value, bool shouldDecrement, long timeout)
+                public Result WaitForAddressIfLessThan(ulong address, int value, bool shouldDecrement, long timeout)
+        {
+            long start = System.Environment.TickCount64;
+
+            return TraceSlowWait(WaitForAddressIfLessThanImpl(address, value, shouldDecrement, timeout), start, "arb-lt", timeout);
+        }
+
+        private Result WaitForAddressIfLessThanImpl(ulong address, int value, bool shouldDecrement, long timeout)
         {
             KThread currentThread = KernelStatic.GetCurrentThread();
 
