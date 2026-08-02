@@ -453,6 +453,12 @@ namespace Ryujinx.HLE.HOS.Services.Nv.NvDrvServices.NvHostChannel
 
             Channel.PushEntries(entries);
 
+            if (header.Flags != SubmitGpfifoFlags.None)
+            {
+                Logger.Info?.Print(LogClass.ServiceNv,
+                    $"SYNCDBG submit flags={header.Flags} fence={header.Fence.Id}:{header.Fence.Value} entries={entries.Length}");
+            }
+
             if (header.Flags.HasFlag(SubmitGpfifoFlags.FenceIncrement))
             {
                 Channel.PushHostCommandBuffer(CreateIncrementCommandBuffer(ref header.Fence, header.Flags));

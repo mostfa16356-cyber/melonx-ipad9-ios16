@@ -71,7 +71,13 @@ namespace Ryujinx.HLE.HOS.Services.Nv.NvDrvServices.NvHostCtrl
 
                 if (oldState == NvHostEventState.Waiting)
                 {
+                    Logger.Info?.Print(LogClass.ServiceNv, $"SYNCDBG signal event={_eventId} fence={Fence.Id}:{Fence.Value}");
+
                     Event.WritableEvent.Signal();
+                }
+                else
+                {
+                    Logger.Info?.Print(LogClass.ServiceNv, $"SYNCDBG signal-skipped event={_eventId} fence={Fence.Id}:{Fence.Value} oldState={oldState}");
                 }
 
                 State = NvHostEventState.Signaled;
@@ -105,6 +111,9 @@ namespace Ryujinx.HLE.HOS.Services.Nv.NvDrvServices.NvHostCtrl
 
                 if (oldState == NvHostEventState.Waiting && _waiterInformation != null)
                 {
+                    Logger.Info?.Print(LogClass.ServiceNv,
+                        $"SYNCDBG cancel-while-waiting event={_eventId} fence={Fence.Id} threshold={Fence.Value} current={gpuContext.Synchronization.GetSyncpointValue(Fence.Id)}");
+
                     gpuContext.Synchronization.UnregisterCallback(Fence.Id, _waiterInformation);
                     _waiterInformation = null;
 
@@ -152,6 +161,9 @@ namespace Ryujinx.HLE.HOS.Services.Nv.NvDrvServices.NvHostCtrl
                     State = NvHostEventState.Waiting;
 
                     _waiterInformation = gpuContext.Synchronization.RegisterCallbackOnSyncpoint(Fence.Id, Fence.Value, GpuSignaled);
+
+                    Logger.Info?.Print(LogClass.ServiceNv,
+                        $"SYNCDBG wait-registered event={_eventId} fence={fence.Id}:{fence.Value} current={gpuContext.Synchronization.GetSyncpointValue(fence.Id)} immediate={_waiterInformation == null}");
 
                     return true;
                 }

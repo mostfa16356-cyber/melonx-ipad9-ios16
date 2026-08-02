@@ -400,6 +400,9 @@ namespace Ryujinx.HLE.HOS.Services.Nv.NvDrvServices.NvHostCtrl
 
                             if (timedOut)
                             {
+                                Logger.Info?.Print(LogClass.ServiceNv,
+                                    $"SYNCDBG wait-async event={eventIndex} fence={fence.Id}:{fence.Value} guestTimeout={timeout}ms");
+
                                 if (isWaitEventCmd)
                                 {
                                     value = ((fence.Id & 0xfff) << 16) | 0x10000000;
