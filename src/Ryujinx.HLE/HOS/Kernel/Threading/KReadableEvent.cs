@@ -1,3 +1,4 @@
+using Ryujinx.Common.Logging;
 using Ryujinx.HLE.HOS.Kernel.Common;
 using Ryujinx.Horizon.Common;
 
@@ -13,7 +14,13 @@ namespace Ryujinx.HLE.HOS.Kernel.Threading
 
         public override void Signal()
         {
+            bool wasSignaled;
+            int waiters;
+
             KernelContext.CriticalSection.Enter();
+
+            wasSignaled = _signaled;
+            waiters = WaitingThreads.Count;
 
             if (!_signaled)
             {
@@ -23,10 +30,20 @@ namespace Ryujinx.HLE.HOS.Kernel.Threading
             }
 
             KernelContext.CriticalSection.Leave();
+
+            if (DebugTrace)
+            {
+                Logger.Info?.Print(LogClass.Kernel, $"SYNCDBG kevent-signal wasSignaled={wasSignaled} waiters={waiters}");
+            }
         }
 
         public Result Clear()
         {
+            if (DebugTrace)
+            {
+                Logger.Info?.Print(LogClass.Kernel, $"SYNCDBG kevent-clear wasSignaled={_signaled}");
+            }
+
             _signaled = false;
 
             return Result.Success;
@@ -50,6 +67,11 @@ namespace Ryujinx.HLE.HOS.Kernel.Threading
             }
 
             KernelContext.CriticalSection.Leave();
+
+            if (DebugTrace)
+            {
+                Logger.Info?.Print(LogClass.Kernel, $"SYNCDBG kevent-clear-if-signaled result={result}");
+            }
 
             return result;
         }

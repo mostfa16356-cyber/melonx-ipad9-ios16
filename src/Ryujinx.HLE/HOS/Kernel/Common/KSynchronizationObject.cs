@@ -10,6 +10,11 @@ namespace Ryujinx.HLE.HOS.Kernel.Common
         
         public LinkedList<KThread> WaitingThreads { get; }
 
+        /// <summary>
+        /// Debug-only: when set, kernel signal/wait operations on this object are logged (SYNCDBG).
+        /// </summary>
+        public bool DebugTrace;
+
         public KSynchronizationObject(KernelContext context) : base(context)
         {
             WaitingThreads = [];

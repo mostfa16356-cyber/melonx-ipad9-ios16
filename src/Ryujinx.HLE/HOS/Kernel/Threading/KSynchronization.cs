@@ -1,3 +1,4 @@
+using Ryujinx.Common.Logging;
 using Ryujinx.HLE.HOS.Kernel.Common;
 using Ryujinx.Horizon.Common;
 using System;
@@ -21,6 +22,19 @@ namespace Ryujinx.HLE.HOS.Kernel.Threading
 
             Result result = KernelResult.TimedOut;
 
+            bool trace = false;
+
+            for (int index = 0; index < syncObjs.Length; index++)
+            {
+                if (syncObjs[index].DebugTrace)
+                {
+                    trace = true;
+                    break;
+                }
+            }
+
+            long traceStart = trace ? System.Environment.TickCount64 : 0;
+
             _context.CriticalSection.Enter();
 
             // Check if objects are already signaled before waiting.
@@ -35,7 +49,17 @@ namespace Ryujinx.HLE.HOS.Kernel.Threading
 
                 _context.CriticalSection.Leave();
 
+                if (trace)
+                {
+                    Logger.Info?.Print(LogClass.Kernel, $"SYNCDBG svc-wait immediate handle={index} timeout={timeout}");
+                }
+
                 return Result.Success;
+            }
+
+            if (trace)
+            {
+                Logger.Info?.Print(LogClass.Kernel, $"SYNCDBG svc-wait sleeping count={syncObjs.Length} timeout={timeout}");
             }
 
             if (timeout == 0)
@@ -108,6 +132,11 @@ namespace Ryujinx.HLE.HOS.Kernel.Threading
             }
 
             _context.CriticalSection.Leave();
+
+            if (trace)
+            {
+                Logger.Info?.Print(LogClass.Kernel, $"SYNCDBG svc-wait exit result={result} handle={handleIndex} elapsed={System.Environment.TickCount64 - traceStart}ms");
+            }
 
             return result;
         }

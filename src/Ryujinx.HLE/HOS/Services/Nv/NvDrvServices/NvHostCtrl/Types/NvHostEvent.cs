@@ -42,6 +42,9 @@ namespace Ryujinx.HLE.HOS.Services.Nv.NvDrvServices.NvHostCtrl
 
             Event = new KEvent(system.KernelContext);
 
+            // SYNCDBG: trace kernel-level signal/clear/wait on this event.
+            Event.ReadableEvent.DebugTrace = true;
+
             if (KernelStatic.GetCurrentProcess().HandleTable.GenerateHandle(Event.ReadableEvent, out EventHandle) != Result.Success)
             {
                 throw new InvalidOperationException("Out of handles!");
