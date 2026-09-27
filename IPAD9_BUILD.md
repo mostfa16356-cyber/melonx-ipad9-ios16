@@ -15,5 +15,7 @@ The preset is applied once to the global `Documents/config.json`. Existing
 per-game configurations may still override it. The source and IPA can be built
 by GitHub Actions in `.github/workflows/build-ipa.yml`; the IPA carries an ad hoc
 signature with JIT and memory entitlements and must be installed through
-TrollStore. The build only proves packaging and iOS
+TrollStore. The build reuses the prebuilt MeloNX 2.5 core from the upstream
+release because its NuGet package feed is unavailable; the core IPA's SHA-256
+is checked before extraction. The build only proves packaging and iOS
 deployment version; gameplay compatibility requires device testing.
