@@ -390,7 +390,7 @@ class RyujinxController: ObservableObject {
         }
         return options
     }
-    
+
     func loadPerGameConfig(_ titleId: String) {
         perSettings[titleId] = perGameOptions(titleId, createIfMissing: true)
     }
