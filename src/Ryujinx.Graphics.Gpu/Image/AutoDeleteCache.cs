@@ -52,14 +52,12 @@ namespace Ryujinx.Graphics.Gpu.Image
         private ulong MaxTextureSizeCapacity = 4UL * GiB;
         private const ulong MinTextureSizeCapacity = 512 * 1024 * 1024;
         private const ulong DefaultTextureSizeCapacity = 1 * GiB;
-        private const ulong LowMemoryIOSTextureSizeCapacity = 256 * 1024 * 1024;
         private const ulong TextureSizeCapacity6GiB = 4 * GiB;
         private const ulong TextureSizeCapacity8GiB = 6 * GiB;
         private const ulong TextureSizeCapacity12GiB = 12 * GiB;
 
         private const float MemoryScaleFactor = 0.50f;
         private ulong _maxCacheMemoryUsage = DefaultTextureSizeCapacity;
-        private int _minCountForDeletion = MinCountForDeletion;
 
         private readonly LinkedList<Texture> _textures;
         private ulong _totalSize;
@@ -81,17 +79,6 @@ namespace Ryujinx.Graphics.Gpu.Image
         /// <param name="cpuMemorySize">The amount of physical CPU Memory Avaiable on the device.</param>
         public void Initialize(GpuContext context, ulong cpuMemorySize)
         {
-            // On 3 GB iPads the foreground app's resident-memory limit is much
-            // lower than physical RAM. Keeping up to 1 GiB of unused textures
-            // makes iPadOS terminate the emulator while a game is loading.
-            if (OperatingSystem.IsIOS() && cpuMemorySize < 4 * GiB)
-            {
-                _maxCacheMemoryUsage = LowMemoryIOSTextureSizeCapacity;
-                _minCountForDeletion = 4;
-                Logger.Info?.Print(LogClass.Gpu, $"Low-memory iOS texture cache limit: {_maxCacheMemoryUsage / (1024 * 1024)} MiB");
-                return;
-            }
-
             ulong cpuMemorySizeGiB = cpuMemorySize / GiB;
 
             if (cpuMemorySizeGiB < 6 || context.Capabilities.MaximumGpuMemory == 0)
@@ -147,8 +134,8 @@ namespace Ryujinx.Graphics.Gpu.Image
             texture.IncrementReferenceCount();
             texture.CacheNode = _textures.AddLast(texture);
 
-            while (_textures.Count > MaxCapacity ||
-                   (_totalSize > _maxCacheMemoryUsage && _textures.Count >= _minCountForDeletion))
+            if (_textures.Count > MaxCapacity ||
+                (_totalSize > _maxCacheMemoryUsage && _textures.Count >= MinCountForDeletion))
             {
                 RemoveLeastUsedTexture();
             }
@@ -173,7 +160,7 @@ namespace Ryujinx.Graphics.Gpu.Image
                     _textures.AddLast(texture.CacheNode);
                 }
 
-                while (_totalSize > _maxCacheMemoryUsage && _textures.Count >= _minCountForDeletion)
+                if (_totalSize > _maxCacheMemoryUsage && _textures.Count >= MinCountForDeletion)
                 {
                     RemoveLeastUsedTexture();
                 }

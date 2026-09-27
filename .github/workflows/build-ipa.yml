@@ -18,23 +18,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-dotnet@v4
-        with:
-          global-json-file: global.json
-
-      - name: Make dotnet visible to Xcode's build script
-        run: sudo ln -sf "$(command -v dotnet)" /usr/local/bin/dotnet
-
       - name: Select latest Xcode
         run: |
           sudo xcode-select -s "$(ls -d /Applications/Xcode*.app | sort -V | tail -n 1)/Contents/Developer"
           xcodebuild -version
 
-      - name: Cache NuGet packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: ios-core-nuget-${{ hashFiles('**/*.csproj', 'Directory.Packages.props', 'nuget.config') }}
+      - name: Restore MeloNX 2.5 prebuilt core
+        run: |
+          curl --fail --location --retry 3 \
+            'https://github.com/nurtrino/MeloNX/releases/download/v2.5/MeloNX-unsigned.ipa' \
+            --output /tmp/MeloNX-v2.5.ipa
+          echo 'ed62f6c19ee96efbdb669cec71430e72ef30c3c5d3c9fd09cd8fbdc8e05e2607  /tmp/MeloNX-v2.5.ipa' \
+            | shasum -a 256 -c -
+          mkdir -p src/Ryujinx.Library/bin/Release/net10.0/ios-arm64/native
+          unzip -p /tmp/MeloNX-v2.5.ipa \
+            Payload/MeloNX.app/Frameworks/Ryujinx.Library.dylib \
+            > src/Ryujinx.Library/bin/Release/net10.0/ios-arm64/native/Ryujinx.Library.dylib
+          test -s src/Ryujinx.Library/bin/Release/net10.0/ios-arm64/native/Ryujinx.Library.dylib
+          touch .ci-core-cache-hit
 
       - name: Archive (unsigned)
         run: |
@@ -62,7 +63,7 @@ jobs:
           test "$(/usr/libexec/PlistBuddy -c 'Print :get-task-allow' build/signed-entitlements.plist)" = true
           test "$(/usr/libexec/PlistBuddy -c 'Print :com.apple.developer.kernel.increased-memory-limit' build/signed-entitlements.plist)" = true
           cd build
-          zip -qry MeloNX-iPad9-iPadOS16.3-TrollStore-fix4.ipa Payload
+          zip -qry MeloNX-iPad9-iPadOS16.3-TrollStore-fix3.ipa Payload
 
       - name: Verify minimum iOS version
         run: |
@@ -73,5 +74,5 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: MeloNX-iPad9-iPadOS16.3-TrollStore-fix4-ipa
-          path: build/MeloNX-iPad9-iPadOS16.3-TrollStore-fix4.ipa
+          name: MeloNX-iPad9-iPadOS16.3-TrollStore-fix3-ipa
+          path: build/MeloNX-iPad9-iPadOS16.3-TrollStore-fix3.ipa
