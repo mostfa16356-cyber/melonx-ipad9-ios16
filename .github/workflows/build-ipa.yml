@@ -79,7 +79,7 @@ jobs:
           plist=build/Payload/MeloNX.app/Info.plist
           min_os=$(/usr/libexec/PlistBuddy -c 'Print :MinimumOSVersion' "$plist")
           echo "MinimumOSVersion=$min_os"
-          test "$(printf '%s\n' "$min_os" '16.3.1' | sort -V | head -n 1)" = "$min_os"
+          python3 -c 'import sys; assert tuple(map(int, sys.argv[1].split("."))) <= (16, 3, 1)' "$min_os"
 
       - uses: actions/upload-artifact@v4
         with:
