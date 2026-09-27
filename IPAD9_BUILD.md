@@ -13,6 +13,7 @@ signing time. These requests cannot increase the device's physical 3 GB RAM.
 
 The preset is applied once to the global `Documents/config.json`. Existing
 per-game configurations may still override it. The source and IPA can be built
-by GitHub Actions in `.github/workflows/build-ipa.yml`; the IPA is unsigned and
-must be installed through TrollStore. The build only proves packaging and iOS
+by GitHub Actions in `.github/workflows/build-ipa.yml`; the IPA carries an ad hoc
+signature with JIT and memory entitlements and must be installed through
+TrollStore. The build only proves packaging and iOS
 deployment version; gameplay compatibility requires device testing.

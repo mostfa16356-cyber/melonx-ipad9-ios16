@@ -1,4 +1,4 @@
-name: Build MeloNX iPad 9 IPA (unsigned)
+name: Build MeloNX iPad 9 TrollStore IPA
 
 on:
   push:
@@ -71,8 +71,15 @@ jobs:
         run: |
           mkdir -p build/Payload
           cp -R build/MeloNX.xcarchive/Products/Applications/MeloNX.app build/Payload/
+          codesign --force --deep --sign - \
+            --entitlements src/MeloNX/MeloNX/MeloNX.entitlements \
+            build/Payload/MeloNX.app
+          codesign --verify --deep --strict build/Payload/MeloNX.app
+          codesign -d --entitlements :- build/Payload/MeloNX.app > build/signed-entitlements.plist
+          test "$(/usr/libexec/PlistBuddy -c 'Print :get-task-allow' build/signed-entitlements.plist)" = true
+          test "$(/usr/libexec/PlistBuddy -c 'Print :com.apple.developer.kernel.increased-memory-limit' build/signed-entitlements.plist)" = true
           cd build
-          zip -qry MeloNX-iPad9-iPadOS16.3-unsigned.ipa Payload
+          zip -qry MeloNX-iPad9-iPadOS16.3-TrollStore.ipa Payload
 
       - name: Verify minimum iOS version
         run: |
@@ -83,5 +90,5 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: MeloNX-iPad9-iPadOS16.3-unsigned-ipa
-          path: build/MeloNX-iPad9-iPadOS16.3-unsigned.ipa
+          name: MeloNX-iPad9-iPadOS16.3-TrollStore-ipa
+          path: build/MeloNX-iPad9-iPadOS16.3-TrollStore.ipa
