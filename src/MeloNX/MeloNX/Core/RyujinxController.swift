@@ -232,14 +232,14 @@ class RyujinxController: ObservableObject {
             NativeSettingsManager.setShared(game.titleId, pullOriginal: true)
         }
         
-        loadWithoutSave(game.titleId)
-        
-        var settings = perSettings[game.titleId] ?? settings
-
-        // Use native resolution for this title while testing its startup crash.
-        if isIPad9 && game.titleId.caseInsensitiveCompare("010028600EBDA000") == .orderedSame {
-            settings.resScale = 1.0
+        let isMario3DWorld = isIPad9 && game.titleId.caseInsensitiveCompare("010028600EBDA000") == .orderedSame
+        if isMario3DWorld {
+            loadPerGameConfig(game.titleId)
+        } else {
+            loadWithoutSave(game.titleId)
         }
+
+        var settings = perSettings[game.titleId] ?? settings
         
         settings.inputPath = game.fileURL.path
         if !isIPad9 {
@@ -255,6 +255,11 @@ class RyujinxController: ObservableObject {
         
         if !(nativeSettingsManager.writeStdout.value as Bool) {
             redirectStdIOToFile()
+        }
+
+        if isMario3DWorld {
+            print("iPad 9 Mario profile: handheld=\(settings.disableDockedMode), resolutionScale=\(settings.resScale), textureRecompression=\(settings.enableTextureRecompression), shaderCacheDisabled=\(settings.disableShaderCache)")
+            fflush(stdout)
         }
         
         Thread.detachNewThread {
@@ -368,6 +373,8 @@ class RyujinxController: ObservableObject {
 
         let migrationKey = "iPad9PerGamePresetV2_\(titleId)"
         let shouldMigrate = isIPad9 && !UserDefaults.standard.bool(forKey: migrationKey)
+        let marioMigrationKey = "iPad9MarioHalfResolutionV3_\(titleId)"
+        let shouldMigrateMario = isIPad9 && titleId.caseInsensitiveCompare("010028600EBDA000") == .orderedSame && !UserDefaults.standard.bool(forKey: marioMigrationKey)
         if shouldMigrate {
             options.memoryManagerMode = .hostMapped
             options.enableTextureRecompression = true
@@ -378,11 +385,28 @@ class RyujinxController: ObservableObject {
             options.enableAsyncShaderCompilation = false
         }
 
-        if stored == nil || shouldMigrate {
+        if shouldMigrateMario {
+            // The 2.5.2 test reached iPadOS's 1.94 GB process limit while loading
+            // this title. Start at half resolution in handheld mode so the
+            // render targets use less resident memory.
+            options.resScale = 0.5
+            options.maxAnisotropy = 0
+            options.antiAliasing = .none
+            options.scalingFilter = .bilinear
+            options.disableDockedMode = true
+            options.enableTextureRecompression = true
+            options.disableShaderCache = true
+            options.enableAsyncShaderCompilation = false
+        }
+
+        if stored == nil || shouldMigrate || shouldMigrateMario {
             do {
                 try options.saveAsJSON(to: url)
                 if shouldMigrate {
                     UserDefaults.standard.set(true, forKey: migrationKey)
+                }
+                if shouldMigrateMario {
+                    UserDefaults.standard.set(true, forKey: marioMigrationKey)
                 }
             } catch {
                 print("Could not save per-game settings for \(titleId): \(error)")
