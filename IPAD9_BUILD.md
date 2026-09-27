@@ -1,4 +1,4 @@
-# MeloNX 2.5.1 iPad 9 test build
+# MeloNX 2.5.2 iPad 9 test build
 
 This fork applies a one-time low-memory preset on iPad12,1 and iPad12,2. It keeps
 the normal app identifier, so TrollStore can install it over an existing MeloNX
@@ -19,3 +19,9 @@ TrollStore. The build reuses the prebuilt MeloNX 2.5 core from the upstream
 release because its NuGet package feed is unavailable; the core IPA's SHA-256
 is checked before extraction. The build only proves packaging and iOS
 deployment version; gameplay compatibility requires device testing.
+
+The 2.5.2 update makes new per-game settings inherit the iPad 9 profile and
+migrates earlier per-game settings to its safe memory mode once. It also uses
+native 1.0x resolution for Super Mario 3D World + Bowser's Fury because the
+frontend warns that lower scales can crash some games. This is a targeted test,
+not a claim that the title is confirmed playable on a 3 GB iPad.

@@ -32,7 +32,7 @@ struct PerGameSettingsView: View {
     
     private var config: Binding<Options> {
         Binding(
-            get: { ryujinxController.perSettings[titleId] ?? Options(inputPath: "") },
+            get: { ryujinxController.perSettings[titleId] ?? ryujinxController.settings },
             set: {
                 ryujinxController.perSettings[titleId] = $0
                 ryujinxController.savePerGameConfig(titleId)

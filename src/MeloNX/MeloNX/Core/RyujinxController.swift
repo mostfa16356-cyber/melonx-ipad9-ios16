@@ -235,6 +235,11 @@ class RyujinxController: ObservableObject {
         loadWithoutSave(game.titleId)
         
         var settings = perSettings[game.titleId] ?? settings
+
+        // Use native resolution for this title while testing its startup crash.
+        if isIPad9 && game.titleId.caseInsensitiveCompare("010028600EBDA000") == .orderedSame {
+            settings.resScale = 1.0
+        }
         
         settings.inputPath = game.fileURL.path
         if !isIPad9 {
@@ -348,26 +353,57 @@ class RyujinxController: ObservableObject {
     func saveConfig() {
         try? settings.saveAsJSON(to: .configURL)
     }
+
+    private func perGameOptions(_ titleId: String, createIfMissing: Bool) -> Options? {
+        let url = URL.perGameConfigURL(titleId)
+        let stored = try? Options.loadFromJSON(at: url)
+        var options: Options
+        if let stored {
+            options = stored
+        } else if createIfMissing {
+            options = settings
+        } else {
+            return nil
+        }
+
+        let migrationKey = "iPad9PerGamePresetV2_\(titleId)"
+        let shouldMigrate = isIPad9 && !UserDefaults.standard.bool(forKey: migrationKey)
+        if shouldMigrate {
+            options.memoryManagerMode = .hostMapped
+            options.enableTextureRecompression = true
+            options.backendThreading = .off
+            options.expandRAM = false
+            options.disableDockedMode = true
+            options.disableShaderCache = true
+            options.enableAsyncShaderCompilation = false
+        }
+
+        if stored == nil || shouldMigrate {
+            do {
+                try options.saveAsJSON(to: url)
+                if shouldMigrate {
+                    UserDefaults.standard.set(true, forKey: migrationKey)
+                }
+            } catch {
+                print("Could not save per-game settings for \(titleId): \(error)")
+            }
+        }
+        return options
+    }
     
     func loadPerGameConfig(_ titleId: String) {
-        let setting2s = perSettings[titleId] ??  .init(inputPath: "")
-        if let settings = try? Options.loadFromJSON(at: .perGameConfigURL(titleId)) {
-            self.perSettings[titleId] = settings
-        } else {
-            try? setting2s.saveAsJSON(to: .perGameConfigURL(titleId))
-            self.perSettings[titleId] = .init(inputPath: "")
-        }
+        perSettings[titleId] = perGameOptions(titleId, createIfMissing: true)
     }
     
     func loadWithoutSave(_ titleId: String) {
-        if let settings = try? Options.loadFromJSON(at: .perGameConfigURL(titleId)) {
-            self.perSettings[titleId] = settings
+        if let options = perGameOptions(titleId, createIfMissing: false) {
+            perSettings[titleId] = options
         }
     }
     
     func savePerGameConfig(_ titleId: String) {
-        let setting2s = perSettings[titleId] ??  .init(inputPath: "")
-        try? setting2s.saveAsJSON(to: .perGameConfigURL(titleId))
+        let options = perSettings[titleId] ?? settings
+        try? options.saveAsJSON(to: .perGameConfigURL(titleId))
     }
     
     func loadGames() {
