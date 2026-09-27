@@ -419,7 +419,7 @@
 					"$(PROJECT_DIR)/MeloNX/Frameworks",
 					"$(PROJECT_DIR)/MeloNX/Dependencies",
 				);
-				MARKETING_VERSION = 2.5;
+				MARKETING_VERSION = 2.5.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.stossy11.MeloNX;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -471,7 +471,7 @@
 					"$(PROJECT_DIR)/MeloNX/Frameworks",
 					"$(PROJECT_DIR)/MeloNX/Dependencies",
 				);
-				MARKETING_VERSION = 2.5;
+				MARKETING_VERSION = 2.5.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.stossy11.MeloNX;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;

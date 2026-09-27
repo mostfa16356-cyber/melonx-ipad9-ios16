@@ -1,4 +1,4 @@
-name: Build MeloNX IPA (unsigned)
+name: Build MeloNX iPad 9 IPA (unsigned)
 
 on:
   push:
@@ -72,15 +72,16 @@ jobs:
           mkdir -p build/Payload
           cp -R build/MeloNX.xcarchive/Products/Applications/MeloNX.app build/Payload/
           cd build
-          zip -qry MeloNX-unsigned.ipa Payload
+          zip -qry MeloNX-iPad9-iPadOS16.3-unsigned.ipa Payload
+
+      - name: Verify minimum iOS version
+        run: |
+          plist=build/Payload/MeloNX.app/Info.plist
+          min_os=$(/usr/libexec/PlistBuddy -c 'Print :MinimumOSVersion' "$plist")
+          echo "MinimumOSVersion=$min_os"
+          test "$(printf '%s\n' "$min_os" '16.3.1' | sort -V | head -n 1)" = "$min_os"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: MeloNX-unsigned-ipa
-          path: build/MeloNX-unsigned.ipa
-
-      - name: Update v2.5 release asset
-        if: github.ref_name == 'master'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh release upload v2.5 build/MeloNX-unsigned.ipa --clobber -R "$GITHUB_REPOSITORY"
+          name: MeloNX-iPad9-iPadOS16.3-unsigned-ipa
+          path: build/MeloNX-iPad9-iPadOS16.3-unsigned.ipa

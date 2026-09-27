@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Combine
+import Darwin
 
 extension URL {
     @available(iOS, introduced: 14.0, deprecated: 16.0, message: "Use URL.documentsDirectory on iOS 16 and above")
@@ -111,6 +112,18 @@ class RyujinxController: ObservableObject {
     static var shared: RyujinxController = .init()
     
     private init() {}
+
+    private var isIPad9: Bool {
+        var systemInfo = utsname()
+        guard uname(&systemInfo) == 0 else { return false }
+        let machineSize = MemoryLayout.size(ofValue: systemInfo.machine)
+        let identifier = withUnsafePointer(to: &systemInfo.machine) { pointer in
+            pointer.withMemoryRebound(to: CChar.self, capacity: machineSize) {
+                String(cString: $0)
+            }
+        }
+        return identifier == "iPad12,1" || identifier == "iPad12,2"
+    }
     
     @Published var isRunning: RunningState = .stopped
     @Published var games: [GameInfo] = []
@@ -224,7 +237,9 @@ class RyujinxController: ObservableObject {
         var settings = perSettings[game.titleId] ?? settings
         
         settings.inputPath = game.fileURL.path
-        settings.backendThreading = .on
+        if !isIPad9 {
+            settings.backendThreading = .on
+        }
         
         isRunning = .started(game: game)
         _isPaused = false
@@ -307,6 +322,26 @@ class RyujinxController: ObservableObject {
             self.settings = settings
         } else {
             try? self.settings.saveAsJSON(to: .configURL)
+        }
+
+        // Apply once so an install over an existing MeloNX copy receives the preset.
+        // Later user changes remain intact, including a game's own settings.
+        if isIPad9 && !UserDefaults.standard.bool(forKey: "iPad9LowMemoryPresetV1") {
+            self.settings.resScale = 0.75
+            self.settings.maxAnisotropy = 0
+            self.settings.antiAliasing = .none
+            self.settings.scalingFilter = .bilinear
+            self.settings.graphicsBackend = .vulkan
+            self.settings.disableDockedMode = true
+            self.settings.disableShaderCache = true
+            self.settings.enableAsyncShaderCompilation = false
+            self.settings.enableTextureRecompression = true
+            self.settings.backendThreading = .off
+            self.settings.memoryManagerMode = .hostMapped
+            self.settings.expandRAM = false
+            if (try? self.settings.saveAsJSON(to: .configURL)) != nil {
+                UserDefaults.standard.set(true, forKey: "iPad9LowMemoryPresetV1")
+            }
         }
     }
     
